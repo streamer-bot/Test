@@ -1,0 +1,30 @@
+name: Firebase
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */5 * * *'
+
+jobs:
+  build:
+    runs-on: macos-12
+    steps:
+      - name: Check repo
+        uses: actions/checkout@master
+        with:
+          lfs: true
+      
+      - name: Checkout LFS objects
+        run: git lfs checkout
+
+      - name: Bundle
+        run: bundle install
+
+      - name: print secrets
+        run: |
+            echo $FIREBASE_AUTH >> streamer.json
+        shell: bash
+        env:
+          FIREBASE_AUTH : ${{secrets.FIREBASE_AUTH}}
+
+      - name: Test
+        run: bundle exec fastlane test
