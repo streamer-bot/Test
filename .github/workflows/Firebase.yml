@@ -10,11 +10,12 @@ jobs:
     steps:
       - name: Check repo
         uses: actions/checkout@master
-        with:
-          lfs: true
       
-      - name: Checkout LFS objects
-        run: git lfs checkout
+
+      - uses: robinraju/release-downloader@v1.4
+        with:
+          latest: true
+          fileName: "build_products.zip"
 
       - name: Bundle
         run: bundle install
