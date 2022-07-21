@@ -1,6 +1,9 @@
 name: UI Tests
 on:
-  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */3 * * *'
+    
 jobs:
   build:
     runs-on: macos-12
