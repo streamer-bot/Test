@@ -41,4 +41,4 @@ jobs:
       - uses: kishikawakatsumi/xcresulttool@v1
         with:
           path: fastlane/test_output/StreamerUITests.xcresult
-          if: success() || failure()
+          if: always()
