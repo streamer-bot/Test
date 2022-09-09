@@ -38,7 +38,8 @@ jobs:
           FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 120
           FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 10
         run: bundle exec fastlane test
-      - uses: kishikawakatsumi/xcresulttool@v1
+      - uses: kishikawakatsumi/xcresulttool@v1.5.0
         with:
+          show-passed-tests: false
           path: fastlane/test_output/StreamerUITests.xcresult
           if: always()
