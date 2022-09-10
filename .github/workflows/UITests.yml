@@ -39,7 +39,7 @@ jobs:
           FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 10
         run: bundle exec fastlane test
       - uses: kishikawakatsumi/xcresulttool@v1.5.0
+        if: always()
         with:
           show-passed-tests: false
           path: fastlane/test_output/StreamerUITests.xcresult
-          if: always()
