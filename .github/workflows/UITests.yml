@@ -42,4 +42,6 @@ jobs:
         if: always()
         with:
           show-passed-tests: false
+          show-code-coverage: fasle
+          upload-bundles: false
           path: fastlane/test_output/StreamerUITests.xcresult
