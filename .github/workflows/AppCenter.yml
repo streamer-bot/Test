@@ -13,9 +13,9 @@ jobs:
           latest: true
           fileName: "build_products_appcenter.zip"
 
-      - uses: montudor/action-zip@v1
-        with:
-          args: unzip -qq build_products_appcenter.zip
+      - name: unzip
+        run: |
+          unzip build_products_appcenter.zip
 
       - name: run any App Center CLI command
         uses: avocaddo/AppCenter-Github-Action@v1.0.2
