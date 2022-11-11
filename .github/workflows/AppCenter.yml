@@ -1,0 +1,24 @@
+name: AppCenter
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build:
+    runs-on: macos-12
+    steps:
+      - uses: robinraju/release-downloader@v1.4
+        with:
+          latest: true
+          fileName: "build_products_appcenter.zip"
+
+      - uses: montudor/action-zip@v1
+        with:
+          args: unzip -qq build_products_appcenter.zip
+
+      - name: run any App Center CLI command
+        uses: joabalea/App-Center-action
+        with:
+          command: appcenter test run xcuitest --app "${{secrets.APP_CENTER_USER}}/StreamerApp" --devices "${{secrets.APP_CENTER_USER}}/rich" --test-series "master" --locale "en_US" --build-dir build_products/Release-iphoneos
+          token: ${{secrets.APP_CENTER_TOKEN}}
