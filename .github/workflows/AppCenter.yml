@@ -6,16 +6,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-12
     steps:
       - uses: robinraju/release-downloader@v1.4
         with:
           latest: true
           fileName: "build_products_appcenter.zip"
 
-      - uses: montudor/action-zip@v1
-        with:
-          args: unzip -qq build_products_appcenter.zip
+      - name: Unzip
+        run:
+          unzip build_products_appcenter.zip
 
       - name: Install AppCenter
         run: |
