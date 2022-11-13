@@ -19,6 +19,8 @@ jobs:
         with:
           repository: ${{ secrets.REPOSITORY}}
           token: ${{ secrets.TOKEN }}
+          submodules: recursive
+          
       - uses: pat-s/always-upload-cache@v3.0.1
         with:
           path: Pods
