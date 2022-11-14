@@ -28,9 +28,11 @@ jobs:
       - name: print secrets
         run: |
             echo $FIREBASE_AUTH >> streamer.json
+            echo $FIREBASE_AUTH_1 >> streamer1.json
         shell: bash
         env:
           FIREBASE_AUTH : ${{secrets.FIREBASE_AUTH}}
+          FIREBASE_AUTH_1 : ${{secrets.FIREBASE_AUTH_1}}
 
       - name: Test
         run: bundle exec fastlane test
