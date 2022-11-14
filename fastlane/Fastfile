@@ -20,6 +20,7 @@ platform :ios do
   lane :test do
     firebase_test_lab_ios_xctest(
       app_path:"build_products.zip",
+      gcp_project: "streamer-1b3b1", # Your Google Cloud project name
       oauth_key_file_path: "streamer.json",
       timeout_sec: "600",
       async: true,
@@ -35,6 +36,7 @@ platform :ios do
 
     firebase_test_lab_ios_xctest(
       app_path:"build_products.zip",
+      gcp_project: "atom---movie-tickets", # Your Google Cloud project name
       oauth_key_file_path: "streamer1.json",
       timeout_sec: "600",
       async: true,
