@@ -31,12 +31,17 @@ jobs:
             echo $FIREBASE_AUTH_1 >> streamer1.json
             echo $FIREBASE_AUTH_2 >> streamer2.json
             echo $FIREBASE_AUTH_3 >> streamer3.json
+            echo $FIREBASE_AUTH_4 >> streamer4.json
+            echo $FIREBASE_AUTH_5 >> streamer5.json
+
         shell: bash
         env:
           FIREBASE_AUTH : ${{secrets.FIREBASE_AUTH}}
           FIREBASE_AUTH_1 : ${{secrets.FIREBASE_AUTH_1}}
           FIREBASE_AUTH_2 : ${{secrets.FIREBASE_AUTH_2}}
           FIREBASE_AUTH_3 : ${{secrets.FIREBASE_AUTH_3}}
-          
+          FIREBASE_AUTH_4 : ${{secrets.FIREBASE_AUTH_4}}
+          FIREBASE_AUTH_5 : ${{secrets.FIREBASE_AUTH_5}}
+
       - name: Test
         run: bundle exec fastlane test
