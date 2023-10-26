@@ -15,7 +15,7 @@ jobs:
 
       - name: Unzip
         run:
-          unzip build_products_clicks.zip
+          unzip build_products.zip
 
       - name: Install AppCenter
         run: |
@@ -23,4 +23,4 @@ jobs:
 
       - name: run any App Center CLI command
         run: |
-          appcenter test run xcuitest --async --app "${{secrets.APP_CENTER_USER_APP}}" --devices "${{secrets.APP_CENTER_USER_DEVICES}}" --test-series "master" --locale "en_US" --build-dir build_products/Release-iphoneos --token ${{secrets.APP_CENTER_TOKEN}}
+          appcenter test run xcuitest --async --app "${{secrets.APP_CENTER_USER_APP}}" --devices "${{secrets.APP_CENTER_USER_DEVICES}}" --test-series "master" --locale "en_US" --build-dir Release-iphoneos --token ${{secrets.APP_CENTER_TOKEN}}
