@@ -11,7 +11,7 @@ jobs:
       - uses: robinraju/release-downloader@v1.4
         with:
           latest: true
-          fileName: "build_products_clicks.zip"
+          fileName: "build_products.zip"
 
       - name: Unzip
         run:
