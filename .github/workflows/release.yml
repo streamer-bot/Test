@@ -1,0 +1,50 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version_number:
+        description: "version number:"
+        required: true
+        default: ""
+jobs:
+  build:
+    runs-on: macos-latest-large
+    steps:      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: 15.2
+
+      - name: install dpkg
+        run: brew install dpkg
+      
+      - name: install permasigner
+        run: pip3 install -U permasigner
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          repository: ${{ secrets.REPOSITORY }}
+          token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+
+      - name: Bundle
+        run: bundle install
+
+      - name: Build and release
+        run: bundle exec fastlane release_local version_number:${{github.event.inputs.version_number}}
+      
+      - uses: GuillaumeFalourd/git-commit-push@v1.3
+        with:
+           commit_message: v${{github.event.inputs.version_number}} release
+           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+           empty: true
+   
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            Streamer-iOS.ipa
+            Streamer-tvOS.ipa
+            Streamer-iOS.deb
+            Streamer-tvOS.deb
+          if-no-files-found: error  
