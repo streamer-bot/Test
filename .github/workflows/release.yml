@@ -8,7 +8,7 @@ on:
         default: ""
 jobs:
   build:
-    runs-on: macos-latest-large
+    runs-on: macos-14
     steps:      
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
