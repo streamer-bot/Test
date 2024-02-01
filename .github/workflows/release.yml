@@ -14,9 +14,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
           xcode-version: 15.2
-
-      - name: install dependencies 
-        run: brew bundle
       
       - name: install permasigner
         run: pip3 install -U permasigner
@@ -26,6 +23,9 @@ jobs:
           fetch-depth: 0
           repository: ${{ secrets.REPOSITORY }}
           token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+
+      - name: install dependencies 
+        run: brew bundle
 
       - name: Bundle
         run: bundle install
