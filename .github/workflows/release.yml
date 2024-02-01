@@ -15,8 +15,8 @@ jobs:
         with:
           xcode-version: 15.2
 
-      - name: install dpkg
-        run: brew install dpkg
+      - name: install dependencies 
+        run: brew bundle
       
       - name: install permasigner
         run: pip3 install -U permasigner
