@@ -30,11 +30,25 @@ jobs:
           repository: ${{ secrets.REPOSITORY }}
           token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
+      - name: Cache packages
+        uses: actions/cache@v3
+        id: packages-cache
+        with:
+          path: |
+            packages_cache/artifacts
+            packages_cache/checkouts
+            packages_cache/workspace_state.json
+          key: ${{ runner.os }}-packages-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-packages-
+
       - name: Bundle
         run: bundle install
 
       - name: Build and release
         run: bundle exec fastlane release_local version_number:${{github.event.inputs.version_number}}
+        env:
+          HAS_PACKAGES_CACHE_HIT: ${{ steps.packages-cache.outputs.cache-hit == 'true' }}
 
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
