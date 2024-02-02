@@ -9,22 +9,22 @@ on:
 jobs:
   build:
     runs-on: macos-14
-    steps:      
+    steps:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
           xcode-version: 15.2
-          
-      - name: install dpkg 
+
+      - name: install dpkg
         run: brew install dpkg
-      
-      - name: install create-dmg 
+
+      - name: install create-dmg
         run: brew install create-dmg
 
       - name: install permasigner
         run: pip3 install -U permasigner
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           repository: ${{ secrets.REPOSITORY }}
@@ -35,19 +35,35 @@ jobs:
 
       - name: Build and release
         run: bundle exec fastlane release_local version_number:${{github.event.inputs.version_number}}
-      
+
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
-           commit_message: v${{github.event.inputs.version_number}} release
-           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-           empty: true
-   
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+          commit_message: v${{github.event.inputs.version_number}} release
+          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+          empty: true
+
+      - name: Upload iOS Artifacts
+        uses: actions/upload-artifact@v4
         with:
+          name: Streamer-iOS.ipa
+          path: Streamer-iOS.ipa
+
+      - name: Upload tvOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Streamer-tvOS.ipa
+          path: Streamer-tvOS.ipa
+
+      - name: Upload Mac Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Streamer-mac.dmg
+          path: Streamer-mac.dmg
+
+      - name: Upload Debs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Streamer-debs.zip
           path: |
-            Streamer-iOS.ipa
-            Streamer-tvOS.ipa
             Streamer-iOS.deb
             Streamer-tvOS.deb
-          if-no-files-found: error  
