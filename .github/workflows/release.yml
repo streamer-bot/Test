@@ -56,28 +56,16 @@ jobs:
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
           empty: true
 
-      - name: Upload iOS Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: Streamer-iOS.ipa
-          path: Streamer-iOS.ipa
-
-      - name: Upload tvOS Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Streamer-tvOS.ipa
-          path: Streamer-tvOS.ipa
-
-      - name: Upload Mac Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Streamer-mac.dmg
-          path: Streamer-mac.dmg
-
-      - name: Upload Debs
-        uses: actions/upload-artifact@v4
-        with:
-          name: Streamer-debs.zip
-          path: |
+          body: "Release v${{github.event.inputs.version_number}}"
+          prerelease: true
+          name: v${{github.event.inputs.version_number}}-prerelease-${{ github.run_id }}
+          tag_name: v${{github.event.inputs.version_number}}-prerelease-${{ github.run_id }}
+          files: |
+            Streamer-iOS.ipa
+            Streamer-tvOS.ipa
+            Streamer-mac.dmg
             Streamer-iOS.deb
             Streamer-tvOS.deb
