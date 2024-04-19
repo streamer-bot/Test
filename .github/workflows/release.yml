@@ -22,7 +22,7 @@ jobs:
         run: brew install create-dmg
 
       - name: install permasigner
-        run: pip3 install -U permasigner
+        run: pip3 install permasigner
 
       - uses: actions/checkout@v4
         with:
