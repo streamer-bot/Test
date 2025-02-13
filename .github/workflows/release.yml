@@ -8,12 +8,12 @@ on:
         default: ""
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15-arm64
     steps:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
-          xcode-version: 15.2
+          xcode-version: 16.1
           
       - name: install dpkg
         run: brew install dpkg
