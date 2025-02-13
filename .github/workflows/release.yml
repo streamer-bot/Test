@@ -19,7 +19,9 @@ jobs:
         run: brew install dpkg
 
       - name: install permasigner
-        run: pip3 install -U permasigner --break-system-packages --ignore-installed
+        run: |
+          brew install pkg-config libffi
+          pip3 install -U permasigner --break-system-packages --ignore-installed
         
       - name: install create-dmg
         run: brew install create-dmg
