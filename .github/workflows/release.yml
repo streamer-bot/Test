@@ -20,6 +20,7 @@ jobs:
 
       - name: install permasigner
         run: |
+          brew unlink pkg-config
           brew install pkg-config libffi
           pip3 install -U permasigner --break-system-packages --ignore-installed
         
