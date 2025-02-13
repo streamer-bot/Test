@@ -13,16 +13,17 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
-          xcode-version: 16.1
+          xcode-version: 16.2
           
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.6' 
+   
       - name: install dpkg
         run: brew install dpkg
 
       - name: install permasigner
-        run: |
-          brew unlink pkg-config
-          brew install pkg-config libffi
-          pip3 install -U permasigner --break-system-packages --ignore-installed
+        run: pip3 install -U permasigner --break-system-packages --ignore-installed
         
       - name: install create-dmg
         run: brew install create-dmg
