@@ -45,6 +45,9 @@ jobs:
           key: ${{ runner.os }}-packages-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-packages-
+      
+      - name: Update Fastlane
+        run: bundle update fastlane
 
       - name: Bundle
         run: bundle install
@@ -68,6 +71,7 @@ jobs:
           name: v${{github.event.inputs.version_number}}-prerelease-${{ github.run_id }}
           tag_name: v${{github.event.inputs.version_number}}-prerelease-${{ github.run_id }}
           files: |
+            Streamer-iOS.ipa
             Streamer-visionOS.ipa
             Streamer-tvOS.ipa
             Streamer-mac.dmg
