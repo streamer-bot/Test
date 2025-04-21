@@ -62,6 +62,7 @@ jobs:
         with:
           commit_message: v${{github.event.inputs.version_number}} release
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+          files: xcconfig/Project-Shared.xcconfig
           empty: true
 
       - name: Release
