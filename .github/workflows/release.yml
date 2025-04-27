@@ -58,6 +58,12 @@ jobs:
         env:
           HAS_PACKAGES_CACHE_HIT: ${{ steps.packages-cache.outputs.cache-hit == 'true' }}
 
+      - name: Reset files 
+        run: |
+          git checkout -- xcconfig/Streamer-iOS/Streamer-iOS-Shared.xcconfig 
+          git checkout -- xcconfig/Streamer-tvOS/Streamer-tvOS-Shared.xcconfig 
+          git checkout -- xcconfig/StreamerTopShelf/StreamerTopShelf-Shared.xcconfig 
+
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
           commit_message: v${{github.event.inputs.version_number}} release
