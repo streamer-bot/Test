@@ -14,20 +14,20 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
           xcode-version: 16.3
-          
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11' 
-   
-      - name: install dpkg
+
+      - name: Install dpkg
         run: brew install dpkg
 
-      - name: install permasigner
+      - name: Install permasigner
         run: pip3 install -U permasigner --break-system-packages --ignore-installed
-        
-      - name: install create-dmg
+
+      - name: Install create-dmg
         run: brew install create-dmg
-        
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -45,7 +45,7 @@ jobs:
           key: ${{ runner.os }}-packages-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-packages-
-      
+
       - name: Update Fastlane
         run: bundle update fastlane
 
@@ -53,25 +53,46 @@ jobs:
         run: bundle install
 
       - name: Build and release
-        run: bundle exec fastlane release_local version_number:${{github.event.inputs.version_number}}
+        run: bundle exec fastlane release_local version_number:${{ github.event.inputs.version_number }}
         env:
           HAS_PACKAGES_CACHE_HIT: ${{ steps.packages-cache.outputs.cache-hit == 'true' }}
 
+      - name: Create .deb package
+        run: |
+          mkdir -p deb/Applications
+          cp Streamer-tvOS.ipa deb/Applications/Streamer.app
+          mkdir -p deb/DEBIAN
+          echo "Package: com.yourcompany.streamer" > deb/DEBIAN/control
+          echo "Version: ${{ github.event.inputs.version_number }}" >> deb/DEBIAN/control
+          echo "Architecture: iphoneos-arm64" >> deb/DEBIAN/control
+          echo "Maintainer: You" >> deb/DEBIAN/control
+          echo "Description: Streamer app" >> deb/DEBIAN/control
+          dpkg-deb -b deb Streamer-${{ github.event.inputs.version_number }}.deb
+
+      - name: Create .tipa (TrollStore IPA)
+        run: |
+          mkdir -p TrollStorePayload/Payload
+          unzip Streamer-iOS.ipa -d TrollStorePayload/Payload
+          mv TrollStorePayload/Payload/Payload TrollStorePayload/Payload/App
+          zip -qry Streamer-${{ github.event.inputs.version_number }}.tipa TrollStorePayload/Payload/App
+
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
-          commit_message: v${{github.event.inputs.version_number}} release
+          commit_message: v${{ github.event.inputs.version_number }} release
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
           empty: true
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          body: "Release v${{github.event.inputs.version_number}}"
+          body: "Release v${{ github.event.inputs.version_number }}"
           prerelease: true
-          name: v${{github.event.inputs.version_number}}-prerelease-${{ github.run_id }}
-          tag_name: v${{github.event.inputs.version_number}}-prerelease-${{ github.run_id }}
+          name: v${{ github.event.inputs.version_number }}-prerelease-${{ github.run_id }}
+          tag_name: v${{ github.event.inputs.version_number }}-prerelease-${{ github.run_id }}
           files: |
             Streamer-iOS.ipa
             Streamer-visionOS.ipa
             Streamer-tvOS.ipa
             Streamer-mac.dmg
+            Streamer-${{ github.event.inputs.version_number }}.deb
+            Streamer-${{ github.event.inputs.version_number }}.tipa
