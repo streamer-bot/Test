@@ -95,4 +95,3 @@ jobs:
             Streamer-tvOS.ipa
             Streamer-mac.dmg
             Streamer-${{ github.event.inputs.version_number }}.deb
-            Streamer-${{ github.event.inputs.version_number }}.tipa
