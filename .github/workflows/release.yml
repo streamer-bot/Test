@@ -70,12 +70,12 @@ jobs:
           dpkg-deb -b deb Streamer-${{ github.event.inputs.version_number }}.deb
 
       - name: Create .tipa (TrollStore IPA)
-  run: |
-    mkdir -p TrollStorePayload/Payload
-    unzip Streamer-iOS.ipa -d TrollStorePayload/Payload
-    rm -rf TrollStorePayload/Payload/App  # Ensure the directory is cleared
-    mv TrollStorePayload/Payload/Payload TrollStorePayload/Payload/App
-    zip -qry Streamer-${{ github.event.inputs.version_number }}.tipa TrollStorePayload/Payload/App
+        run: |
+          mkdir -p TrollStorePayload/Payload
+          unzip Streamer-iOS.ipa -d TrollStorePayload/Payload
+          rm -rf TrollStorePayload/Payload/App  # Ensure the directory is cleared
+          mv TrollStorePayload/Payload/Payload TrollStorePayload/Payload/App
+          zip -qry Streamer-${{ github.event.inputs.version_number }}.tipa TrollStorePayload/Payload/App
     
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
@@ -96,4 +96,4 @@ jobs:
             Streamer-tvOS.ipa
             Streamer-mac.dmg
             Streamer-${{ github.event.inputs.version_number }}.deb
-             Streamer-${{ github.event.inputs.version_number }}.tipa
+            Streamer-${{ github.event.inputs.version_number }}.tipa
