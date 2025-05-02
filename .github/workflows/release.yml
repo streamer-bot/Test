@@ -57,26 +57,22 @@ jobs:
         env:
           HAS_PACKAGES_CACHE_HIT: ${{ steps.packages-cache.outputs.cache-hit == 'true' }}
 
-      - name: Create .deb package
+      - name: Copy Streamer-iOS.ipa to Streamer-iOS-trollstore.ipa
         run: |
-          mkdir -p deb/Applications
-          cp Streamer-tvOS.ipa deb/Applications/Streamer.app
-          mkdir -p deb/DEBIAN
-          echo "Package: com.yourcompany.streamer" > deb/DEBIAN/control
-          echo "Version: ${{ github.event.inputs.version_number }}" >> deb/DEBIAN/control
-          echo "Architecture: iphoneos-arm64" >> deb/DEBIAN/control
-          echo "Maintainer: You" >> deb/DEBIAN/control
-          echo "Description: Streamer app" >> deb/DEBIAN/control
-          dpkg-deb -b deb Streamer-${{ github.event.inputs.version_number }}.deb
+          cp Streamer-iOS.ipa Streamer-iOS-trollstore.ipa
+          
+      - uses: bradyjoslin/ios-resign-action@v1
+        with:
+          ipa_path: ./Streamer-iOS-trollstore.ipa
+          mobileprovision: ${{ secrets.MOBILEPROVISION }}
+          cert_p12: ${{ secrets.CERT_P12 }}
+          p12_pass: ${{ secrets.P12_PASS }}
+          signing_identity: ${{ secrets.SIGNING_IDENTITY }}
 
-      - name: Create .tipa (TrollStore IPA)
+      - name: Rename Streamer-iOS-trollstore.ipa to Streamer-iOS-trollstore.tipa
         run: |
-          mkdir -p TrollStorePayload/Payload
-          unzip Streamer-iOS.ipa -d TrollStorePayload/Payload
-          rm -rf TrollStorePayload/Payload/App  # Ensure the directory is cleared
-          mv TrollStorePayload/Payload/Payload TrollStorePayload/Payload/App
-          zip -qry Streamer-${{ github.event.inputs.version_number }}.tipa TrollStorePayload/Payload/App
-    
+          mv Streamer-iOS-trollstore.ipa Streamer-iOS-trollstore.tipa
+
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
           commit_message: v${{ github.event.inputs.version_number }} release
@@ -95,5 +91,6 @@ jobs:
             Streamer-visionOS.ipa
             Streamer-tvOS.ipa
             Streamer-mac.dmg
-            Streamer-${{ github.event.inputs.version_number }}.deb
-            Streamer-${{ github.event.inputs.version_number }}.tipa
+            streamer-iOS.deb
+            streamer-tvOS.deb
+            Streamer-iOS-trollstore.tipa
