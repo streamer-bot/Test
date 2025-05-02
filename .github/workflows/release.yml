@@ -61,7 +61,7 @@ jobs:
         run: |
           cp Streamer-iOS.ipa Streamer-iOS-trollstore.ipa
           
-      - uses: bradyjoslin/ios-resign-action@v1
+      - uses: mmaetzler/ios-resign-action@update-script
         with:
           ipa_path: ./Streamer-iOS-trollstore.ipa
           mobileprovision: ${{ secrets.MOBILEPROVISION }}
