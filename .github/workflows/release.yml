@@ -47,6 +47,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-packages-
       
+      - name: Update Header Search Paths
+        run: |
+          # Add header search path for Libavutil.framework
+          echo "Updating Xcode project settings..."
+          export HEADER_SEARCH_PATHS="$(PROJECT_DIR)/KSPlayer/FFmpegKit/Sources/Libavutil.xcframework/ios-arm64/Libavutil.framework/Headers"
+          echo "HEADER_SEARCH_PATHS set to: $HEADER_SEARCH_PATHS"
+
       - name: Update Fastlane
         run: bundle update fastlane
       
