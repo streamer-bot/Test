@@ -48,7 +48,6 @@ jobs:
         uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
           commit_message: "Automated: Update xcconfig files for release v${{ github.event.inputs.version_number }}"
-          add: "xcconfig/Project-Shared.xcconfig xcconfig/Streamer-iOS/Streamer-iOS-Shared.xcconfig xcconfig/Streamer-tvOS/Streamer-tvOS-Shared.xcconfig xcconfig/StreamerTopShelf/StreamerTopShelf-Shared.xcconfig"
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   build_platform:
