@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload ${{ matrix.platform }} IPA artifact
         if: matrix.artifact_name_ipa != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name_ipa }}
           path: ${{ matrix.artifact_name_ipa }}
@@ -147,7 +147,7 @@ jobs:
 
       - name: Upload ${{ matrix.platform }} DEB artifact
         if: matrix.artifact_name_deb != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name_deb }}
           path: ${{ matrix.artifact_name_deb }}
@@ -155,7 +155,7 @@ jobs:
       
       - name: Upload ${{ matrix.platform }} DMG artifact
         if: matrix.artifact_name_dmg != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name_dmg }}
           path: ${{ matrix.artifact_name_dmg }}
@@ -163,7 +163,7 @@ jobs:
 
       - name: Upload ${{ matrix.platform }} dSYM artifact
         if: matrix.artifact_name_dsym != ''
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name_dsym }}
           path: ${{ matrix.artifact_name_dsym }}
@@ -171,7 +171,7 @@ jobs:
       
       - name: Upload TrollStore .tipa artifact
         if: matrix.platform == 'ios' && matrix.trollstore_tipa != '' && steps.packages-cache.outputs.cache-hit
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.trollstore_tipa }}
           path: ${{ matrix.trollstore_tipa }}
@@ -182,7 +182,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: List downloaded files (for debugging)
         run: |
