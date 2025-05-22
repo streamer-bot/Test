@@ -13,6 +13,7 @@ jobs:
     outputs:
       version_number: ${{ github.event.inputs.version_number }}
       commit_sha: ${{ steps.push_xcconfig_changes.outputs.commit_hash }}
+      original_build_number: ${{ steps.get_original_build.outputs.original_build_number }}
     steps:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
@@ -30,6 +31,14 @@ jobs:
       
       - name: Bundle Install
         run: bundle install
+
+      - name: Get original build number
+        id: get_original_build
+        run: |
+          value=$(grep -E "^CURRENT_PROJECT_VERSION\\s*=\\s*" xcconfig/Project-Shared.xcconfig | awk -F '= ' '{print $2}' | tr -d '[:space:]')
+          echo "Original build number: $value"
+          echo "original_build_number=$value" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Run Prepare Release Step
         run: bundle exec fastlane ios prepare_release_step version_number:${{ github.event.inputs.version_number }}
@@ -186,6 +195,48 @@ jobs:
           name: ${{ matrix.trollstore_tipa }}
           path: ${{ matrix.trollstore_tipa }}
           if-no-files-found: error
+
+  rollback_build_number:
+    needs: [prepare_and_finalize, build_platform]
+    if: failure()
+    runs-on: macos-15
+    name: Rollback Build Number
+    steps:
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: 16.3
+
+      - name: Checkout code at the commit with bumped build number
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: ${{ secrets.REPOSITORY }}
+          token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+          ref: ${{ needs.prepare_and_finalize.outputs.commit_sha }}
+
+      - name: Setup Ruby and Bundler
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 'default'
+          bundler-cache: true
+
+      - name: Revert build number in xcconfig
+        run: |
+          echo "Reverting CURRENT_PROJECT_VERSION to ${{ needs.prepare_and_finalize.outputs.original_build_number }}"
+          bundle exec fastlane run update_xcconfig_value \
+            path:xcconfig/Project-Shared.xcconfig \
+            name:CURRENT_PROJECT_VERSION \
+            value:"${{ needs.prepare_and_finalize.outputs.original_build_number }}"
+        env:
+          ORIGINAL_BUILD_NUMBER: ${{ needs.prepare_and_finalize.outputs.original_build_number }}
+
+      - name: Commit and Push reverted build number
+        uses: GuillaumeFalourd/git-commit-push@v1.3
+        with:
+          commit_message: "Automated: Rollback build number due to build failure (v${{ needs.prepare_and_finalize.outputs.version_number }})"
+          add: "xcconfig/Project-Shared.xcconfig"
+          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   finalize_and_release:
     needs: [prepare_and_finalize, build_platform]
