@@ -8,34 +8,89 @@ on:
         default: ""
 
 jobs:
-  build:
+  prepare_and_finalize:
     runs-on: macos-15
+    outputs:
+      version_number: ${{ github.event.inputs.version_number }}
     steps:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
           xcode-version: 16.3
-      
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11' 
-      
-      - name: Install dpkg
-        run: brew install dpkg
-      
-      - name: Install permasigner
-        run: pip3 install -U permasigner --break-system-packages --ignore-installed
-      
-      - name: Install create-dmg
-        run: brew install create-dmg
-      
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           repository: ${{ secrets.REPOSITORY }}
           token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
       
-      - name: Cache packages
+      - name: Update Fastlane
+        run: bundle update fastlane
+      
+      - name: Bundle Install
+        run: bundle install
+
+      - name: Run Prepare Release Step
+        run: bundle exec fastlane ios prepare_release_step version_number:${{ github.event.inputs.version_number }}
+
+  build_platform:
+    needs: prepare_and_finalize
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ios, visionos, tvos, mac]
+        include:
+          - platform: ios
+            lane: build_ios_lane
+            artifact_name_ipa: Streamer-iOS.ipa
+            artifact_name_deb: streamer-iOS.deb
+            artifact_name_dsym: Streamer-iOS.app.dSYM.zip
+            trollstore_ipa: Streamer-iOS-trollstore.ipa
+            trollstore_tipa: Streamer-iOS-trollstore.tipa
+          - platform: visionos
+            lane: build_visionos_lane
+            artifact_name_ipa: Streamer-visionOS.ipa
+            artifact_name_dsym: Streamer-visionOS.app.dSYM.zip
+          - platform: tvos
+            lane: build_tvos_lane
+            artifact_name_ipa: Streamer-tvOS.ipa
+            artifact_name_deb: streamer-tvOS.deb
+            artifact_name_dsym: Streamer-tvOS.app.dSYM.zip
+          - platform: mac
+            lane: build_mac_lane
+            artifact_name_dmg: Streamer-mac.dmg
+            artifact_name_dsym: Streamer-Mac.app.dSYM.zip
+            
+    steps:
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: 16.3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dpkg (if needed by permasigner/packaging scripts)
+        if: matrix.platform == 'ios' || matrix.platform == 'tvos'
+        run: brew install dpkg
+      
+      - name: Install permasigner (if needed)
+        if: matrix.platform == 'ios' || matrix.platform == 'tvos'
+        run: pip3 install -U permasigner --break-system-packages --ignore-installed
+      
+      - name: Install create-dmg (if needed)
+        if: matrix.platform == 'mac'
+        run: brew install create-dmg
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: ${{ secrets.REPOSITORY }}
+          token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+
+      - name: Cache Swift Packages
         uses: actions/cache@v3
         id: packages-cache
         with:
@@ -47,9 +102,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-packages-
       
-      - name: Update Header Search Paths
+      - name: Update Header Search Paths (if still necessary globally)
         run: |
-          # Add header search path for Libavutil.framework
           echo "Updating Xcode project settings..."
           export HEADER_SEARCH_PATHS="$(PROJECT_DIR)/KSPlayer/FFmpegKit/Sources/Libavutil.xcframework/ios-arm64/Libavutil.framework/Headers"
           echo "HEADER_SEARCH_PATHS set to: $HEADER_SEARCH_PATHS"
@@ -57,48 +111,109 @@ jobs:
       - name: Update Fastlane
         run: bundle update fastlane
       
-      - name: Bundle
+      - name: Bundle Install
         run: bundle install
-      
-      - name: Build and release
-        run: bundle exec fastlane release_local version_number:${{ github.event.inputs.version_number }}
+
+      - name: Build ${{ matrix.platform }}
+        run: bundle exec fastlane ios ${{ matrix.lane }} version_number:${{ needs.prepare_and_finalize.outputs.version_number }} has_packages_cache_hit:${{ steps.packages-cache.outputs.cache-hit == 'true' }}
         env:
           HAS_PACKAGES_CACHE_HIT: ${{ steps.packages-cache.outputs.cache-hit == 'true' }}
-      
+
       - name: Copy Streamer-iOS.ipa to Streamer-iOS-trollstore.ipa
-        run: |
-          cp Streamer-iOS.ipa Streamer-iOS-trollstore.ipa
+        if: matrix.platform == 'ios' && steps.packages-cache.outputs.cache-hit
+        run: cp ${{ matrix.artifact_name_ipa }} ${{ matrix.trollstore_ipa }}
           
-      - uses: mmaetzler/ios-resign-action@update-script
+      - name: Resign TrollStore IPA
+        if: matrix.platform == 'ios' && steps.packages-cache.outputs.cache-hit
+        uses: mmaetzler/ios-resign-action@update-script
         with:
-          ipa_path: ./Streamer-iOS-trollstore.ipa
+          ipa_path: ./${{ matrix.trollstore_ipa }}
           mobileprovision: ${{ secrets.MOBILEPROVISION }}
           cert_p12: ${{ secrets.CERT_P12 }}
           p12_pass: ${{ secrets.P12_PASS }}
           signing_identity: ${{ secrets.SIGNING_IDENTITY }}
       
-      - name: Rename Streamer-iOS-trollstore.ipa to Streamer-iOS-trollstore.tipa
+      - name: Rename TrollStore IPA to .tipa
+        if: matrix.platform == 'ios' && steps.packages-cache.outputs.cache-hit
+        run: mv ${{ matrix.trollstore_ipa }} ${{ matrix.trollstore_tipa }}
+
+      - name: Upload ${{ matrix.platform }} IPA artifact
+        if: matrix.artifact_name_ipa != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name_ipa }}
+          path: ${{ matrix.artifact_name_ipa }}
+          if-no-files-found: error
+
+      - name: Upload ${{ matrix.platform }} DEB artifact
+        if: matrix.artifact_name_deb != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name_deb }}
+          path: ${{ matrix.artifact_name_deb }}
+          if-no-files-found: error
+      
+      - name: Upload ${{ matrix.platform }} DMG artifact
+        if: matrix.artifact_name_dmg != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name_dmg }}
+          path: ${{ matrix.artifact_name_dmg }}
+          if-no-files-found: error
+
+      - name: Upload ${{ matrix.platform }} dSYM artifact
+        if: matrix.artifact_name_dsym != ''
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name_dsym }}
+          path: ${{ matrix.artifact_name_dsym }}
+          if-no-files-found: error
+      
+      - name: Upload TrollStore .tipa artifact
+        if: matrix.platform == 'ios' && matrix.trollstore_tipa != '' && steps.packages-cache.outputs.cache-hit
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.trollstore_tipa }}
+          path: ${{ matrix.trollstore_tipa }}
+          if-no-files-found: error
+
+  finalize_and_release:
+    needs: [prepare_and_finalize, build_platform]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v3
+
+      - name: List downloaded files (for debugging)
         run: |
-          mv Streamer-iOS-trollstore.ipa Streamer-iOS-trollstore.tipa
+          ls -R
+          echo "Current directory structure:"
+          find . -type f -print
       
-      - uses: GuillaumeFalourd/git-commit-push@v1.3
-        with:
-          commit_message: v${{ github.event.inputs.version_number }} release
-          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-          empty: true
-      
-      - name: Release
+      - name: Create GitHub Release
+        id: create_release
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body: "Release v${{ github.event.inputs.version_number }}"
+          body: "Release v${{ needs.prepare_and_finalize.outputs.version_number }}"
           prerelease: true
-          name: v${{ github.event.inputs.version_number }}-prerelease-${{ github.run_id }}
-          tag_name: v${{ github.event.inputs.version_number }}-prerelease-${{ github.run_id }}
+          name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
+          tag_name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
           files: |
-            Streamer-iOS.ipa
-            Streamer-visionOS.ipa
-            Streamer-tvOS.ipa
-            Streamer-mac.dmg
-            streamer-iOS.deb
-            streamer-tvOS.deb
-            Streamer-iOS-trollstore.tipa
+            Streamer-iOS.ipa/Streamer-iOS.ipa
+            Streamer-visionOS.ipa/Streamer-visionOS.ipa
+            Streamer-tvOS.ipa/Streamer-tvOS.ipa
+            Streamer-mac.dmg/Streamer-mac.dmg
+            streamer-iOS.deb/streamer-iOS.deb
+            streamer-tvOS.deb/streamer-tvOS.deb
+            Streamer-iOS-trollstore.tipa/Streamer-iOS-trollstore.tipa
+
+      - name: Commit and Push Release Tag
+        if: steps.create_release.outputs.id != ''
+        uses: GuillaumeFalourd/git-commit-push@v1.3
+        with:
+          commit_message: Release v${{ needs.prepare_and_finalize.outputs.version_number }} and build artifacts
+          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+          tag: true
+          tag_name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
