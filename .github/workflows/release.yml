@@ -6,6 +6,10 @@ on:
         description: "version number:"
         required: true
         default: ""
+      branch_name:
+        description: "Branch to pull from:"
+        required: false
+        default: "main"
 
 jobs:
   prepare_and_finalize:
@@ -25,6 +29,7 @@ jobs:
           fetch-depth: 0
           repository: ${{ secrets.REPOSITORY }}
           token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+          ref: ${{ github.event.inputs.branch_name }}
       
       - name: Update Fastlane
         run: bundle update fastlane
