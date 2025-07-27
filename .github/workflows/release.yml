@@ -53,7 +53,7 @@ jobs:
         uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
           commit_message: "Automated: Update xcconfig files for release v${{ github.event.inputs.version_number }}"
-          target_branch: ${{ github.event.inputs.branch_name }
+          target_branch: ${{ github.event.inputs.branch_name }}
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   build_platform:
