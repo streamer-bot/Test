@@ -53,6 +53,7 @@ jobs:
         uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
           commit_message: "Automated: Update xcconfig files for release v${{ github.event.inputs.version_number }}"
+          target_branch: ${{ github.event.inputs.branch_name }
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   build_platform:
@@ -240,6 +241,7 @@ jobs:
         with:
           commit_message: "Automated: Rollback build number due to build failure (v${{ needs.prepare_and_finalize.outputs.version_number }})"
           add: "xcconfig/Project-Shared.xcconfig"
+          target_branch: ${{ github.event.inputs.branch_name }}
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   finalize_and_release:
@@ -281,4 +283,5 @@ jobs:
           commit_message: Release v${{ needs.prepare_and_finalize.outputs.version_number }} and build artifacts
           access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
           tag: true
+          target_branch: ${{ github.event.inputs.branch_name }}
           tag_name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
