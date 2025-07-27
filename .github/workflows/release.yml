@@ -111,7 +111,7 @@ jobs:
           fetch-depth: 0
           repository: ${{ secrets.REPOSITORY }}
           token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-          ref: ${{ needs.prepare_and_finalize.outputs.commit_sha }}
+          ref: ${{ needs.prepare_and_finalize.outputs.commit_sha || github.event.inputs.branch_name }}
 
       - name: Cache Swift Packages
         uses: actions/cache@v3
@@ -217,7 +217,7 @@ jobs:
           fetch-depth: 0
           repository: ${{ secrets.REPOSITORY }}
           token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-          ref: ${{ needs.prepare_and_finalize.outputs.commit_sha }}
+          ref: ${{ needs.prepare_and_finalize.outputs.commit_sha || github.event.inputs.branch_name }}
 
       - name: Setup Ruby and Bundler
         uses: ruby/setup-ruby@v1
