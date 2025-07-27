@@ -50,11 +50,14 @@ jobs:
 
       - name: Commit and Push xcconfig changes
         id: push_xcconfig_changes
-        uses: GuillaumeFalourd/git-commit-push@v1.3
-        with:
-          commit_message: "Automated: Update xcconfig files for release v${{ github.event.inputs.version_number }}"
-          target_branch: ${{ github.event.inputs.branch_name }}
-          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add xcconfig/Project-Shared.xcconfig
+          git commit -m "Automated: Update xcconfig files for release v${{ github.event.inputs.version_number }}"
+          git push origin HEAD:${{ github.event.inputs.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   build_platform:
     needs: prepare_and_finalize
@@ -223,7 +226,7 @@ jobs:
       - name: Setup Ruby and Bundler
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 'default'
+          ruby-version: '3.3'
           bundler-cache: true
 
       - name: Revert build number in xcconfig
@@ -237,12 +240,14 @@ jobs:
           ORIGINAL_BUILD_NUMBER: ${{ needs.prepare_and_finalize.outputs.original_build_number }}
 
       - name: Commit and Push reverted build number
-        uses: GuillaumeFalourd/git-commit-push@v1.3
-        with:
-          commit_message: "Automated: Rollback build number due to build failure (v${{ needs.prepare_and_finalize.outputs.version_number }})"
-          add: "xcconfig/Project-Shared.xcconfig"
-          target_branch: ${{ github.event.inputs.branch_name }}
-          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add xcconfig/Project-Shared.xcconfig
+          git commit -m "Automated: Rollback build number due to build failure (v${{ needs.prepare_and_finalize.outputs.version_number }})"
+          git push origin HEAD:${{ github.event.inputs.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
   finalize_and_release:
     needs: [prepare_and_finalize, build_platform]
@@ -278,10 +283,11 @@ jobs:
 
       - name: Commit and Push Release Tag
         if: steps.create_release.outputs.id != ''
-        uses: GuillaumeFalourd/git-commit-push@v1.3
-        with:
-          commit_message: Release v${{ needs.prepare_and_finalize.outputs.version_number }} and build artifacts
-          access_token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-          tag: true
-          target_branch: ${{ github.event.inputs.branch_name }}
-          tag_name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
+          git push origin ${{ github.event.inputs.branch_name }}
+          git push origin v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
