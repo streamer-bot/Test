@@ -280,14 +280,3 @@ jobs:
             streamer-iOS.deb/streamer-iOS.deb
             streamer-tvOS.deb/streamer-tvOS.deb
             Streamer-iOS-trollstore.tipa/Streamer-iOS-trollstore.tipa
-
-      - name: Commit and Push Release Tag
-        if: steps.create_release.outputs.id != ''
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
-          git push origin ${{ github.event.inputs.branch_name }}
-          git push origin v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
