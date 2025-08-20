@@ -56,6 +56,7 @@ jobs:
           git add xcconfig/Project-Shared.xcconfig
           git commit -m "Automated: Update xcconfig files for release v${{ github.event.inputs.version_number }}"
           git push origin HEAD:${{ github.event.inputs.branch_name }}
+          echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
 
@@ -69,24 +70,34 @@ jobs:
         include:
           - platform: ios
             lane: build_ios_lane
-            artifact_name_ipa: Streamer-iOS.ipa
-            artifact_name_deb: streamer-iOS.deb
-            artifact_name_dsym: Streamer-iOS.app.dSYM.zip
-            trollstore_ipa: Streamer-iOS-trollstore.ipa
-            trollstore_tipa: Streamer-iOS-trollstore.tipa
+            artifact_name_ipa: Streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            artifact_name_deb: streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
+            artifact_name_dsym: Streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.app.dSYM.zip
+            trollstore_ipa: Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            trollstore_tipa: Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.tipa
+            base_ipa: Streamer-iOS.ipa
+            base_deb: streamer-iOS.deb
+            base_dsym: Streamer-iOS.app.dSYM.zip
           - platform: visionos
             lane: build_visionos_lane
-            artifact_name_ipa: Streamer-visionOS.ipa
-            artifact_name_dsym: Streamer-visionOS.app.dSYM.zip
+            artifact_name_ipa: Streamer-visionOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            artifact_name_dsym: Streamer-visionOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.app.dSYM.zip
+            base_ipa: Streamer-visionOS.ipa
+            base_dsym: Streamer-visionOS.app.dSYM.zip
           - platform: tvos
             lane: build_tvos_lane
-            artifact_name_ipa: Streamer-tvOS.ipa
-            artifact_name_deb: streamer-tvOS.deb
-            artifact_name_dsym: Streamer-tvOS.app.dSYM.zip
+            artifact_name_ipa: Streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            artifact_name_deb: streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
+            artifact_name_dsym: Streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.app.dSYM.zip
+            base_ipa: Streamer-tvOS.ipa
+            base_deb: streamer-tvOS.deb
+            base_dsym: Streamer-tvOS.app.dSYM.zip
           - platform: mac
             lane: build_mac_lane
-            artifact_name_dmg: Streamer-mac.dmg
-            artifact_name_dsym: Streamer-Mac.app.dSYM.zip
+            artifact_name_dmg: Streamer-mac-v${{ needs.prepare_and_finalize.outputs.version_number }}.dmg
+            artifact_name_dsym: Streamer-Mac-v${{ needs.prepare_and_finalize.outputs.version_number }}.app.dSYM.zip
+            base_dmg: Streamer-mac.dmg
+            base_dsym: Streamer-Mac.app.dSYM.zip
             
     steps:
       - name: Setup Xcode
@@ -146,12 +157,27 @@ jobs:
         env:
           HAS_PACKAGES_CACHE_HIT: ${{ steps.packages-cache.outputs.cache-hit == 'true' }}
 
-      - name: Copy Streamer-iOS.ipa to Streamer-iOS-trollstore.ipa
-        if: matrix.platform == 'ios' && steps.packages-cache.outputs.cache-hit
-        run: cp ${{ matrix.artifact_name_ipa }} ${{ matrix.trollstore_ipa }}
+      - name: Rename build artifacts with version
+        run: |
+          if [ -f "${{ matrix.base_ipa }}" ]; then
+            mv "${{ matrix.base_ipa }}" "${{ matrix.artifact_name_ipa }}"
+          fi
+          if [ -f "${{ matrix.base_deb }}" ]; then
+            mv "${{ matrix.base_deb }}" "${{ matrix.artifact_name_deb }}"
+          fi
+          if [ -f "${{ matrix.base_dmg }}" ]; then
+            mv "${{ matrix.base_dmg }}" "${{ matrix.artifact_name_dmg }}"
+          fi
+          if [ -f "${{ matrix.base_dsym }}" ]; then
+            mv "${{ matrix.base_dsym }}" "${{ matrix.artifact_name_dsym }}"
+          fi
+
+      - name: Copy IPA for TrollStore
+        if: matrix.platform == 'ios'
+        run: cp "${{ matrix.artifact_name_ipa }}" "${{ matrix.trollstore_ipa }}"
           
       - name: Resign TrollStore IPA
-        if: matrix.platform == 'ios' && steps.packages-cache.outputs.cache-hit
+        if: matrix.platform == 'ios'
         uses: mmaetzler/ios-resign-action@update-script
         with:
           ipa_path: ./${{ matrix.trollstore_ipa }}
@@ -161,8 +187,8 @@ jobs:
           signing_identity: ${{ secrets.SIGNING_IDENTITY }}
       
       - name: Rename TrollStore IPA to .tipa
-        if: matrix.platform == 'ios' && steps.packages-cache.outputs.cache-hit
-        run: mv ${{ matrix.trollstore_ipa }} ${{ matrix.trollstore_tipa }}
+        if: matrix.platform == 'ios'
+        run: mv "${{ matrix.trollstore_ipa }}" "${{ matrix.trollstore_tipa }}"
 
       - name: Upload ${{ matrix.platform }} IPA artifact
         if: matrix.artifact_name_ipa != ''
@@ -197,7 +223,7 @@ jobs:
           if-no-files-found: error
       
       - name: Upload TrollStore .tipa artifact
-        if: matrix.platform == 'ios' && matrix.trollstore_tipa != '' && steps.packages-cache.outputs.cache-hit
+        if: matrix.platform == 'ios' && matrix.trollstore_tipa != ''
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.trollstore_tipa }}
@@ -273,10 +299,10 @@ jobs:
           name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
           tag_name: v${{ needs.prepare_and_finalize.outputs.version_number }}-prerelease-${{ github.run_id }}
           files: |
-            Streamer-iOS.ipa/Streamer-iOS.ipa
-            Streamer-visionOS.ipa/Streamer-visionOS.ipa
-            Streamer-tvOS.ipa/Streamer-tvOS.ipa
-            Streamer-mac.dmg/Streamer-mac.dmg
-            streamer-iOS.deb/streamer-iOS.deb
-            streamer-tvOS.deb/streamer-tvOS.deb
-            Streamer-iOS-trollstore.tipa/Streamer-iOS-trollstore.tipa
+            Streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa/Streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            Streamer-visionOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa/Streamer-visionOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            Streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa/Streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
+            Streamer-mac-v${{ needs.prepare_and_finalize.outputs.version_number }}.dmg/Streamer-mac-v${{ needs.prepare_and_finalize.outputs.version_number }}.dmg
+            streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb/streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
+            streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb/streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
+            Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.tipa/Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.tipa
