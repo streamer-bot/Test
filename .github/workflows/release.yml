@@ -73,8 +73,6 @@ jobs:
             artifact_name_ipa: Streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
             artifact_name_deb: streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
             artifact_name_dsym: Streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.app.dSYM.zip
-            trollstore_ipa: Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.ipa
-            trollstore_tipa: Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.tipa
             base_ipa: Streamer-iOS.ipa
             base_deb: streamer-iOS.deb
             base_dsym: Streamer-iOS.app.dSYM.zip
@@ -172,24 +170,6 @@ jobs:
             mv "${{ matrix.base_dsym }}" "${{ matrix.artifact_name_dsym }}"
           fi
 
-      - name: Copy IPA for TrollStore
-        if: matrix.platform == 'ios'
-        run: cp "${{ matrix.artifact_name_ipa }}" "${{ matrix.trollstore_ipa }}"
-          
-      - name: Resign TrollStore IPA
-        if: matrix.platform == 'ios'
-        uses: mmaetzler/ios-resign-action@update-script
-        with:
-          ipa_path: ./${{ matrix.trollstore_ipa }}
-          mobileprovision: ${{ secrets.MOBILEPROVISION }}
-          cert_p12: ${{ secrets.CERT_P12 }}
-          p12_pass: ${{ secrets.P12_PASS }}
-          signing_identity: ${{ secrets.SIGNING_IDENTITY }}
-      
-      - name: Rename TrollStore IPA to .tipa
-        if: matrix.platform == 'ios'
-        run: mv "${{ matrix.trollstore_ipa }}" "${{ matrix.trollstore_tipa }}"
-
       - name: Upload ${{ matrix.platform }} IPA artifact
         if: matrix.artifact_name_ipa != ''
         uses: actions/upload-artifact@v4
@@ -222,13 +202,6 @@ jobs:
           path: ${{ matrix.artifact_name_dsym }}
           if-no-files-found: error
       
-      - name: Upload TrollStore .tipa artifact
-        if: matrix.platform == 'ios' && matrix.trollstore_tipa != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.trollstore_tipa }}
-          path: ${{ matrix.trollstore_tipa }}
-          if-no-files-found: error
 
   rollback_build_number:
     needs: [prepare_and_finalize, build_platform]
@@ -305,4 +278,3 @@ jobs:
             Streamer-mac-v${{ needs.prepare_and_finalize.outputs.version_number }}.dmg/Streamer-mac-v${{ needs.prepare_and_finalize.outputs.version_number }}.dmg
             streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb/streamer-iOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
             streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb/streamer-tvOS-v${{ needs.prepare_and_finalize.outputs.version_number }}.deb
-            Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.tipa/Streamer-iOS-trollstore-v${{ needs.prepare_and_finalize.outputs.version_number }}.tipa
